@@ -1,23 +1,22 @@
 export const generateColumns = () => {
-  const columns = [{ key: 'rowNum', name: '', resizable: true, editable: true }];
+  const columns = [];
   for (let i = 0; i < 26; i++) {
     const letter = String.fromCharCode(65 + i); // 'A' to 'Z'
     columns.push({
-      key: letter,
-      name: letter,
+      title: letter,      
+      width: '70px',     
     });
   }
   return columns;
 };
 
+
+
 export const generateRows = () => {
   const rows = [];
+ 
   for (let i = 0; i < 10; i++) {
-    const row = { rowNum: i + 1 }; // Row numbers on the left
-    for (let j = 0; j < 26; j++) {
-      const letter = String.fromCharCode(65 + j);
-      row[letter] = ''; // Initialize with empty values
-    }
+    const row = Array(26).fill(''); 
     rows.push(row);
   }
   return rows;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Grid, Card, CardContent, Typography, IconButton, TextField } from '@mui/material';
+import { Grid, Card, CardContent, Typography, IconButton, TextField, List, ListItem, ListItemText } from '@mui/material';
 import { Icon } from '@iconify/react';
 import { generateColumns, generateRows, saveSheetToLocalStorage } from '../Helper';
 import InfoModal from '../InfoModal/InfoModal';
@@ -10,6 +10,7 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
   const [newTitle, setNewTitle] = useState('');
   const [selectedSheet, setSelectedSheet] = useState(null);
   const [sortOrder, setSortOrder] = useState({ field: 'name', direction: 'asc' });
+  const [viewType, setViewType] = useState('grid'); // State to toggle between grid and list view
 
   // Filter sheets based on search query
   const filteredSheets = sheets.filter(sheet =>
@@ -39,7 +40,7 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
 
   const handleAddSheet = () => {
     const currentDate = new Date().toISOString();
-    const currentTimestamp = Date.now(); 
+    const currentTimestamp = Date.now();
     const newSheet = {
       title: `New Spreadsheet ${sheets.length + 1}`,
       columns: generateColumns(),
@@ -106,6 +107,7 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
 
   return (
     <div>
+      {/* Search bar and view toggle buttons */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
         <TextField
           label="Search Sheets"
@@ -114,83 +116,118 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
           onChange={handleSearchChange}
           style={{ flexGrow: 1 }}
         />
-      <IconButton onClick={() => changeSortField('name')}>
-  <Typography style={{ fontWeight: sortOrder.field === 'name' ? 'bold' : 'normal' }}>
-    Sort by Name
-  </Typography>
-  {sortOrder.field === 'name' && <Icon icon="mdi:check" width="16" height="16" style={{ marginLeft: '4px' }} />}
-</IconButton>
-<IconButton onClick={() => changeSortField('lastUpdated')}>
-  <Typography style={{ fontWeight: sortOrder.field === 'lastUpdated' ? 'bold' : 'normal' }}>
-    Sort by Last Updated
-  </Typography>
-  {sortOrder.field === 'lastUpdated' && <Icon icon="mdi:check" width="16" height="16" style={{ marginLeft: '4px' }} />}
-</IconButton>
-<IconButton onClick={() => changeSortField('dateCreated')}>
-  <Typography style={{ fontWeight: sortOrder.field === 'dateCreated' ? 'bold' : 'normal' }}>
-    Sort by Creation Date
-  </Typography>
-  {sortOrder.field === 'dateCreated' && <Icon icon="mdi:check" width="16" height="16" style={{ marginLeft: '4px' }} />}
-</IconButton>
+        <IconButton onClick={() => setViewType('grid')}>
+          <Icon icon="mdi:grid" width="24" height="24" />
+        </IconButton>
+        <IconButton onClick={() => setViewType('list')}>
+          <Icon icon="material-symbols:list" width="24" height="24" />
+        </IconButton>
 
         <IconButton onClick={toggleSortOrder}>
-        <Icon icon={`mdi:arrow-${sortOrder.direction === 'asc' ? 'down' : 'up'}`} width="24" height="24" />
+          <Icon icon={`mdi:arrow-${sortOrder.direction === 'asc' ? 'down' : 'up'}`} width="24" height="24" />
+        </IconButton>
+        <IconButton onClick={() => changeSortField('name')}>
+          <Typography style={{ fontWeight: sortOrder.field === 'name' ? 'bold' : 'normal' }}>
+            Sort by Name
+          </Typography>
+        </IconButton>
+        <IconButton onClick={() => changeSortField('lastUpdated')}>
+          <Typography style={{ fontWeight: sortOrder.field === 'lastUpdated' ? 'bold' : 'normal' }}>
+            Sort by Last Updated
+          </Typography>
+        </IconButton>
+        <IconButton onClick={() => changeSortField('dateCreated')}>
+          <Typography style={{ fontWeight: sortOrder.field === 'dateCreated' ? 'bold' : 'normal' }}>
+            Sort by Creation Date
+          </Typography>
         </IconButton>
       </div>
 
-      <Grid container spacing={2}>
-        {sortedSheets.map((sheet, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card onClick={() => handleGridClick(sheet.id)}>
-              <CardContent>
-                <div style={{ maxHeight: 75, overflowY: 'auto' }}>
-                  {sheet.rows.slice(0, 3).map((row, rowIndex) => (
-                    <div key={rowIndex}>
-                      {sheet.columns.slice(1).map(col => (
-                        <span key={col.key} style={{ marginRight: '10px' }}>
-                          {row[col.key] || ''}
-                        </span>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+      {/* Conditional rendering of grid or list view */}
+      {viewType === 'grid' ? (
+        <Grid container spacing={2}>
+          {sortedSheets.map((sheet, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Card onClick={() => handleGridClick(sheet.id)}>
+                <CardContent>
+                  <Typography variant="h6"></Typography>
+                  <div style={{ maxHeight: 75, overflowY: 'auto' }}>
+                    {sheet.rows.slice(0, 3).map((row, rowIndex) => (
+                      <div key={rowIndex}>
+                        {sheet.columns.slice(1).map(col => (
+                          <span key={col.key} style={{ marginRight: '10px' }}>
+                            {row[col.key] || ''}
+                          </span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {editingTitle === sheet.title ? (
+                  <TextField
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    onBlur={() => handleSaveTitle(sheet)}
+                    autoFocus
+                  />
+                ) : (
+                  <Typography
+                    variant="h6"
+                    onClick={() => handleTitleClick(sheet)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {sheet.title}
+                  </Typography>
+                )}
+                <IconButton onClick={() => handleInfoClick(sheet)}>
+                  <Icon icon="material-symbols:info" width="24" height="24" />
+                </IconButton>
+                <IconButton onClick={(e) => { e.stopPropagation(); handleDeleteSheet(sheet.id); }}>
+                  <Icon icon="mdi:trash" width="24" height="24" />
+                </IconButton>
+              </div>
+            </Grid>
+          ))}
+
+          <Grid item xs={12} sm={6} md={4} key="add-sheet">
+            <Card onClick={handleAddSheet} style={{ cursor: 'pointer' }}>
+              <CardContent style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 95, maxHeight: 95 }}>
+                <Typography variant="h4"><Icon icon="mdi:plus" width="24" height="24" /></Typography>
               </CardContent>
             </Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {editingTitle === sheet.title ? (
-                <TextField
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  onBlur={() => handleSaveTitle(sheet)}
-                  autoFocus
-                />
-              ) : (
-                <Typography
-                  variant="h6"
-                  onClick={() => handleTitleClick(sheet)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {sheet.title}
-                </Typography>
-              )}
-              <IconButton onClick={() => handleInfoClick(sheet)}>
-                <Icon icon="material-symbols:info" width="24" height="24" />
-              </IconButton>
-              <IconButton onClick={(e) => { e.stopPropagation(); handleDeleteSheet(sheet.id); }}>
-                <Icon icon="mdi:trash" width="24" height="24" />
-              </IconButton>
-            </div>
           </Grid>
-        ))}
-
-        <Grid item xs={12} sm={6} md={4} key="add-sheet">
-          <Card onClick={handleAddSheet} style={{ cursor: 'pointer' }}>
-            <CardContent style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 95, maxHeight: 95 }}>
-              <Typography variant="h4"><Icon icon="mdi:plus" width="24" height="24" /></Typography>
-            </CardContent>
-          </Card>
         </Grid>
-      </Grid>
+      ) : (
+   <List>
+  {sortedSheets.map((sheet, index) => (
+    <ListItem button key={index} onClick={() => handleGridClick(sheet.id)}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+        {/* Title Section */}
+        <ListItemText 
+          primary={sheet.title}
+          style={{ fontWeight: 'bold' }}
+        />
+
+        {/* Creation Date Section */}
+        <div style={{ fontSize: '14px', color: '#555', marginLeft: '16px' }}>
+          <strong>Created: </strong>{new Date(sheet.dateCreated).toLocaleDateString()}
+        </div>
+
+        {/* Last Updated Date Section */}
+        <div style={{ fontSize: '14px', color: '#555', marginLeft: '16px' }}>
+          <strong>Last Updated: </strong>{new Date(sheet.lastUpdated).toLocaleDateString()}
+        </div>
+    
+
+  
+      </div>
+    </ListItem>
+  ))}
+</List>
+
+      )}
 
       <InfoModal
         open={Boolean(selectedSheet)}
