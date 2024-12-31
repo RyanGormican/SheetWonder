@@ -1,96 +1,92 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './App.css';
-import { Icon } from '@iconify/react';
 import Feedback from './components/Feedback/Feedback';
-import 'react-data-grid/lib/styles.css';
+import Navigate from './components/Navigate';
 import DataGrid from 'react-data-grid';
-
-// Function to generate column headers from A to Z
-const generateColumns = () => {
-  const columns = [{ key: 'rowNum', name: '', resizable: true, editable: true }];
-  for (let i = 0; i < 26; i++) {
-    const letter = String.fromCharCode(65 + i);  // 65 is 'A' in ASCII
-    columns.push({
-      key: letter,
-      name: letter,
-    });
-  }
-  return columns;
-};
-
-// Function to generate 1000 rows with default empty values
-const generateRows = () => {
-  const rows = [];
-  for (let i = 0; i < 10; i++) {
-    const row = { rowNum: i + 1 };  // Add a row number for the leftmost column
-    for (let j = 0; j < 26; j++) {
-      const letter = String.fromCharCode(65 + j);
-      row[letter] = '';  // Initialize with empty values
-    }
-    rows.push(row);
-  }
-  return rows;
-};
+import Select from './components/Select'; 
+import { generateColumns, generateRows } from './components/Helper';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [rows, setRows] = useState([]);
+  const [view, setView] = useState('select'); // 'select' or 'sheet'
+  const [sheets, setSheets] = useState([]);
+  const [currentSheet, setCurrentSheet] = useState(null);
   const [columns, setColumns] = useState([]);
-  
+  const [rows, setRows] = useState([]);
+
   const toggleFeedbackModal = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-
+  // Load SheetWonder from localStorage or create default if not found
   useEffect(() => {
-    setRows(generateRows());
-    setColumns(generateColumns());
+    const savedData = JSON.parse(localStorage.getItem('SheetWonderdata'));
+        const currentDate = new Date().toISOString();
+    if (!savedData) {
+      const defaultSheets = {
+        sheets: [
+          {
+            title: 'New Spreadsheet',
+            columns: generateColumns(),
+            rows: generateRows(),
+            id: currentDate,
+            dateCreated: currentDate,
+            lastUpdated: currentDate,
+          }
+        ],
+        settings: {}
+      };
+      localStorage.setItem('SheetWonderdata', JSON.stringify(defaultSheets));
+      setSheets(defaultSheets.sheets);
+    } else {
+      setSheets(savedData.sheets);
+    }
   }, []);
+
+  // Handle when a grid element is clicked
+  const handleGridClick = (sheet) => {
+    setCurrentSheet(sheet);
+    setColumns(sheet.columns);
+    setRows(sheet.rows);
+    setView('sheet');
+  };
+
+  // Memoized columns and rows to prevent unnecessary recalculation
+  const memoizedColumns = useMemo(() => columns, [columns]);
+  const memoizedRows = useMemo(() => rows, [rows]);
+
+  // Render the sheet view
+  const renderSheetView = () => (
+    <div className="data-grid-container">
+      <DataGrid
+        style={{ height: 'auto' }}
+        columns={memoizedColumns}
+        rows={memoizedRows}
+        defaultColumnOptions={{
+          resizable: true,
+          sortable: true,
+          draggable: true,
+        }}
+        onRowsChange={(newRows) => {
+          const updatedSheet = { ...currentSheet, rows: newRows };
+          setRows(newRows);
+          setCurrentSheet(updatedSheet);
+          const updatedSheets = sheets.map(sheet =>
+            sheet.title === updatedSheet.title ? updatedSheet : sheet
+          );
+          localStorage.setItem('SheetWonderdata', JSON.stringify({ sheets: updatedSheets, settings: {} }));
+        }}
+      />
+    </div>
+  );
 
   return (
     <div className="App">
-      <span className="links">
-        <a href="https://www.linkedin.com/in/ryangormican/">
-          <Icon
-            icon="mdi:linkedin"
-            color="#0e76a8"
-            style={{ width: '3.13vw', height: '5.56vh' }}
-          />
-        </a>
-        <a href="https://github.com/RyanGormican/SheetWonder">
-          <Icon
-            icon="mdi:github"
-            color="#e8eaea"
-            style={{ width: '3.13vw', height: '5.56vh' }}
-          />
-        </a>
-        <a href="https://ryangormicanportfoliohub.vercel.app/">
-          <Icon
-            icon="teenyicons:computer-outline"
-            color="#199c35"
-            style={{ width: '3.13vw', height: '5.56vh' }}
-          />
-        </a>
-        <div className="cursor-pointer" onClick={toggleFeedbackModal}>
-          <Icon
-            icon="material-symbols:feedback"
-            style={{ width: '3.13vw', height: '5.56vh' }}
-          />
-        </div>
-      </span>
+      <Navigate toggleFeedbackModal={toggleFeedbackModal} />
       <div className="title">SheetWonder</div>
-      <div className="data-grid-container">
-        <DataGrid
-          style={{ height: 'auto' }}
-          columns={columns}
-          rows={rows}
-          defaultColumnOptions={{
-        resizable: true,
-        sortable: true,
-        draggable: true
-      }}
-        />
-      </div>
+      {view === 'select' ? (
+        <Select sheets={sheets} setSheets={setSheets} handleGridClick={handleGridClick} />
+      ) : renderSheetView()}
       {isModalOpen && (
         <Feedback isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
       )}

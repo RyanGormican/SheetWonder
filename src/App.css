@@ -52,3 +52,20 @@
   font-weight: 400;
   font-style: normal;
 }
+.MuiTypography-root {
+  font-family: "Baskerville SC", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.MuiTypography-h6 {
+  font-family: "Baskerville SC", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.MuiTypography-body1 {
+  font-family: "Baskerville SC", serif;
+  font-weight: 400;
+  font-style: normal;
+}
