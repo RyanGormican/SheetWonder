@@ -39,6 +39,7 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
 
   const handleAddSheet = () => {
     const currentDate = new Date().toISOString();
+    const currentTimestamp = Date.now(); 
     const newSheet = {
       title: `New Spreadsheet ${sheets.length + 1}`,
       columns: generateColumns(),
