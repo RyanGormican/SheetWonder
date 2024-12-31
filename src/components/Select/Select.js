@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Grid, Card, CardContent, Typography, IconButton, TextField } from '@mui/material';
 import { Icon } from '@iconify/react';
-import { generateColumns, generateRows, saveSheetToLocalStorage } from './Helper';
-import InfoModal from './InfoModal/InfoModal';
+import { generateColumns, generateRows, saveSheetToLocalStorage } from '../Helper';
+import InfoModal from '../InfoModal/InfoModal';
 
 const Select = ({ sheets, setSheets, handleGridClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,7 +43,7 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
       title: `New Spreadsheet ${sheets.length + 1}`,
       columns: generateColumns(),
       rows: generateRows(),
-      id: currentDate,
+      id: currentTimestamp,
       dateCreated: currentDate,
       lastUpdated: currentDate,
     };
@@ -140,7 +140,7 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
       <Grid container spacing={2}>
         {sortedSheets.map((sheet, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card onClick={() => handleGridClick(sheet)}>
+            <Card onClick={() => handleGridClick(sheet.id)}>
               <CardContent>
                 <div style={{ maxHeight: 75, overflowY: 'auto' }}>
                   {sheet.rows.slice(0, 3).map((row, rowIndex) => (

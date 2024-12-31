@@ -3,7 +3,7 @@ import './App.css';
 import Feedback from './components/Feedback/Feedback';
 import Navigate from './components/Navigate';
 import DataGrid from 'react-data-grid';
-import Select from './components/Select'; 
+import Select from './components/Select/Select'; 
 import { generateColumns, generateRows } from './components/Helper';
 
 function App() {
@@ -21,7 +21,8 @@ function App() {
   // Load SheetWonder from localStorage or create default if not found
   useEffect(() => {
     const savedData = JSON.parse(localStorage.getItem('SheetWonderdata'));
-        const currentDate = new Date().toISOString();
+     const currentDate = new Date().toISOString();
+     const currentTimestamp = Date.now(); 
     if (!savedData) {
       const defaultSheets = {
         sheets: [
@@ -29,7 +30,7 @@ function App() {
             title: 'New Spreadsheet',
             columns: generateColumns(),
             rows: generateRows(),
-            id: currentDate,
+            id: currentTimestamp,
             dateCreated: currentDate,
             lastUpdated: currentDate,
           }
@@ -44,24 +45,23 @@ function App() {
   }, []);
 
   // Handle when a grid element is clicked
-  const handleGridClick = (sheet) => {
-    setCurrentSheet(sheet);
-    setColumns(sheet.columns);
-    setRows(sheet.rows);
+  const handleGridClick = (id) => {
+  console.log(id);
+  const selectedSheet = sheets.find(sheet => sheet.id === id);
+   setCurrentSheet(selectedSheet);
+    setColumns(selectedSheet.columns);
+    setRows(selectedSheet.rows);
     setView('sheet');
   };
 
-  // Memoized columns and rows to prevent unnecessary recalculation
-  const memoizedColumns = useMemo(() => columns, [columns]);
-  const memoizedRows = useMemo(() => rows, [rows]);
 
   // Render the sheet view
   const renderSheetView = () => (
     <div className="data-grid-container">
       <DataGrid
         style={{ height: 'auto' }}
-        columns={memoizedColumns}
-        rows={memoizedRows}
+        columns={columns}
+        rows={rows}
         defaultColumnOptions={{
           resizable: true,
           sortable: true,
