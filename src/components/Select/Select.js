@@ -3,6 +3,7 @@ import { Grid, Card, CardContent, Typography, IconButton, TextField, List, ListI
 import { Icon } from '@iconify/react';
 import { generateColumns, generateRows, saveSheetToLocalStorage } from '../Helper';
 import InfoModal from '../InfoModal/InfoModal';
+import { saveAs } from 'file-saver'; // To help with file download
 
 const Select = ({ sheets, setSheets, handleGridClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,6 +38,23 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
     }
     return 0;
   });
+
+  // Function to convert sheet data to CSV
+  const convertToCSV = (sheet) => {
+    const header = sheet.columns.map(col => col.title).join(',');
+    const rows = sheet.rows.map(row => 
+      sheet.columns.map(col => row[col.key] || '').join(',')
+    ).join('\n');
+
+    return `${header}\n${rows}`;
+  };
+
+  // Function to download CSV
+  const handleDownloadCSV = (sheet) => {
+    const csvData = convertToCSV(sheet);
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `${sheet.title}.csv`);
+  };
 
   const handleAddSheet = () => {
     const currentDate = new Date().toISOString();
@@ -181,6 +199,9 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
                     {sheet.title}
                   </Typography>
                 )}
+                 <IconButton onClick={() => handleDownloadCSV(sheet)}>
+                  <Icon icon="mdi:download" width="24" height="24" />
+                </IconButton>
                 <IconButton onClick={() => handleInfoClick(sheet)}>
                   <Icon icon="material-symbols:info" width="24" height="24" />
                 </IconButton>
@@ -200,33 +221,27 @@ const Select = ({ sheets, setSheets, handleGridClick }) => {
           </Grid>
         </Grid>
       ) : (
-   <List>
-  {sortedSheets.map((sheet, index) => (
-    <ListItem button key={index} onClick={() => handleGridClick(sheet.id)}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        {/* Title Section */}
-        <ListItemText 
-          primary={sheet.title}
-          style={{ fontWeight: 'bold' }}
-        />
-
-        {/* Creation Date Section */}
-        <div style={{ fontSize: '14px', color: '#555', marginLeft: '16px' }}>
-          <strong>Created: </strong>{new Date(sheet.dateCreated).toLocaleDateString()}
-        </div>
-
-        {/* Last Updated Date Section */}
-        <div style={{ fontSize: '14px', color: '#555', marginLeft: '16px' }}>
-          <strong>Last Updated: </strong>{new Date(sheet.lastUpdated).toLocaleDateString()}
-        </div>
-    
-
-  
-      </div>
-    </ListItem>
-  ))}
-</List>
-
+        <List>
+          {sortedSheets.map((sheet, index) => (
+            <ListItem button key={index} onClick={() => handleGridClick(sheet.id)}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <ListItemText 
+                  primary={sheet.title}
+                  style={{ fontWeight: 'bold' }}
+                />
+                <div style={{ fontSize: '14px', color: '#555', marginLeft: '16px' }}>
+                  <strong>Created: </strong>{new Date(sheet.dateCreated).toLocaleDateString()}
+                </div>
+                <div style={{ fontSize: '14px', color: '#555', marginLeft: '16px' }}>
+                  <strong>Last Updated: </strong>{new Date(sheet.lastUpdated).toLocaleDateString()}
+                </div>
+                <IconButton onClick={() => handleDownloadCSV(sheet)}>
+                  <Icon icon="mdi:download" width="24" height="24" />
+                </IconButton>
+              </div>
+            </ListItem>
+          ))}
+        </List>
       )}
 
       <InfoModal

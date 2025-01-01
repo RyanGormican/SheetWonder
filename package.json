@@ -8,10 +8,12 @@
     "@iconify/react": "^5.1.0",
     "@mui/material": "^6.3.0",
     "cra-template": "1.2.0",
+    "file-saver": "^2.0.5",
     "firebase": "^11.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "react-window": "^1.8.11"
   },
   "scripts": {
     "start": "react-scripts start",
