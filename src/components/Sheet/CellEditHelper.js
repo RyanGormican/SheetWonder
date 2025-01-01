@@ -1,6 +1,9 @@
-export const handleEditCell = (rowIndex, cellIndex, setEditing, setEditedValue, currentSheet) => {
+export const handleEditCell = (rowIndex, cellIndex, setEditing, setEditedValue, currentSheet,highlightedColumnIndex, setHighlightedColumnIndex,highlightedRowIndex, setHighlightedRowIndex) => {
+  const cellValue = currentSheet.rows[rowIndex]?.[cellIndex] || '';
   setEditing({ rowIndex, cellIndex });
-  setEditedValue(currentSheet.rows[rowIndex][cellIndex] || '');
+  setEditedValue(cellValue); 
+  setHighlightedColumnIndex(null);
+  setHighlightedRowIndex(null);
 };
 
 

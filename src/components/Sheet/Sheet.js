@@ -4,6 +4,8 @@ import { FixedSizeList as List } from 'react-window';
 import RowMenu from './RowMenu'; 
 import { handleEditCell, handleSaveEdit } from './CellEditHelper'; 
 import {handleColumnRename} from './ColumnHelper'; 
+import ResizableColumn from './ResizableColumn';
+
 const Sheet = ({ currentSheet, setCurrentSheet, sheets, setSheets }) => {
   const [editing, setEditing] = useState(null); // Track the cell being edited
   const [editedValue, setEditedValue] = useState(''); // Store the edited value
@@ -27,16 +29,41 @@ const Sheet = ({ currentSheet, setCurrentSheet, sheets, setSheets }) => {
 
   // Handle clicking a column header to highlight the column
   const handleColumnClick = (colIndex) => {
+  if (highlightedColumnIndex != colIndex)
+  {
     setHighlightedColumnIndex(colIndex); // Highlight the clicked column
+    setHighlightedRowIndex(null);
+  } else {
+   setHighlightedColumnIndex(null); 
+  }
   };
 
-  
-  // Open context menu for row actions
-  const handleRowContextMenu = (event, rowIndex) => {
-    event.preventDefault(); // Prevent default context menu
-    setMenuRowIndex(rowIndex); // Store the row index
-    setAnchorEl(event.currentTarget); // Set the anchor element for the menu
+    const [totalWidth, setTotalWidth] = useState(0);
+
+  // Calculate total width of columns dynamically
+  const calculateTotalWidth = () => {
+    const total = currentSheet.columns.reduce((sum, col) => {
+      // Remove the 'px' and parse the number
+      const width = parseInt(col.width.replace('px', ''), 10);
+      return sum + width;
+    }, 0);
+    setTotalWidth(total); // Update state with the new total width
   };
+
+  // Whenever the columns change, recalculate the total width
+  useEffect(() => {
+    calculateTotalWidth();
+  }, [currentSheet.columns]); // Trigger recalculation on columns change
+
+
+  // Open context menu for row actions
+// Open context menu for row actions and highlight the row
+const handleRowContextMenu = (event, rowIndex) => {
+  event.preventDefault(); // Prevent default context menu
+  setMenuRowIndex(rowIndex); // Store the row index for context menu actions
+  setHighlightedRowIndex(rowIndex); // Highlight the right-clicked row
+  setAnchorEl(event.currentTarget); // Set the anchor element for the menu (the clicked row element)
+};
 
   // Open context menu for column actions (Delete, Add Column Left, Add Column Right)
   const handleColumnContextMenu = (event, colIndex) => {
@@ -50,51 +77,6 @@ const Sheet = ({ currentSheet, setCurrentSheet, sheets, setSheets }) => {
     setAnchorEl(null);
   };
 
-// Add column to the left of the selected column
-const handleAddColumnLeft = () => {
-  const newColumn = { title: 'New Column', width: 100 }; // Create a new empty column
-  const updatedColumns = [...currentSheet.columns];
-  updatedColumns.splice(menuColIndex, 0, newColumn); // Insert new column
-
-  // Add empty data to each row to reflect the new column
-  const updatedRows = currentSheet.rows.map(row => {
-    const newRow = [...row];
-    newRow.splice(menuColIndex, 0, ''); // Add an empty value at the selected column index
-    return newRow;
-  });
-
-  updateSheetData(updatedColumns, updatedRows);
-};
-
-// Add column to the right of the selected column
-const handleAddColumnRight = () => {
-  const newColumn = { title: 'New Column', width: 100 }; // Create a new empty column
-  const updatedColumns = [...currentSheet.columns];
-  updatedColumns.splice(menuColIndex + 1, 0, newColumn); // Insert new column after
-
-  // Add empty data to each row to reflect the new column
-  const updatedRows = currentSheet.rows.map(row => {
-    const newRow = [...row];
-    newRow.splice(menuColIndex + 1, 0, ''); // Add an empty value after the selected column index
-    return newRow;
-  });
-
-  updateSheetData(updatedColumns, updatedRows);
-};
-
-// Delete the selected column
-const handleDeleteColumn = () => {
-  const updatedColumns = currentSheet.columns.filter((_, index) => index !== menuColIndex);
-
-  // Remove the data in each row for the deleted column
-  const updatedRows = currentSheet.rows.map(row => {
-    const newRow = [...row];
-    newRow.splice(menuColIndex, 1); // Remove the column data from the row
-    return newRow;
-  });
-
-  updateSheetData(updatedColumns, updatedRows);
-};
 
   // Add rows to the sheet
   const handleAddRows = () => {
@@ -151,93 +133,100 @@ const handleDeleteColumn = () => {
       <div style={{ display: 'flex', borderBottom: '2px solid black' }}>
         <div style={{ border: '1px solid black', minWidth: 50, padding: 8 }}>#</div>
         {currentSheet.columns.map((col, colIndex) => (
-          <div
-            key={colIndex}
-            style={{
-              border: '1px solid black',
-              width: col.width, // Set the column width from column.width
-              padding: 8,
-              backgroundColor: highlightedColumnIndex === colIndex ? '#d3d3d3' : 'transparent', // Highlight column
-              cursor: 'pointer',
-            }}
-            onClick={() => handleColumnClick(colIndex)} // Handle column click to highlight
-            onContextMenu={(event) => handleColumnContextMenu(event, colIndex)} // Context menu on right-click for column
-          >
-            {highlightedColumnIndex === colIndex ? (
-              <TextField
-                value={col.title}
-                onChange={(e) => handleColumnRename(currentSheet, setCurrentSheet, sheets, setSheets, colIndex, e.target.value)}
-                variant="standard"
-                fullWidth
-              />
-            ) : (
-              col.title
-            )}
-          </div>
+           <ResizableColumn
+    key={colIndex}
+    colIndex={colIndex}
+    col={col}
+    currentSheet={currentSheet}
+    updateSheetData={updateSheetData}
+    handleColumnClick={handleColumnClick}
+    highlightedColumnIndex={highlightedColumnIndex}
+    sheets={sheets}
+    setCurrentSheet={setCurrentSheet}
+    setSheets={setSheets}
+  />
         ))}
       </div>
 
       {/* Use react-window for virtualized row rendering */}
-      <List
-        height={listHeight} // Set the height of the visible area
-        itemCount={rowData.length}  // Total number of rows
-        itemSize={50}  // Height of each row (adjust as needed)
-        width="100%"  // Full width
-      >
-        {({ index, style }) => {
-          const row = rowData[index];
-          return (
-            <div
-              key={index}
-              style={{
-                ...style,
-                display: 'flex',
-                backgroundColor: highlightedRowIndex === index ? '#f0f0f0' : 'transparent',
-                cursor: 'pointer',
-              }}
-              onClick={() => setHighlightedRowIndex(index)} // Highlight on click
-              onContextMenu={(event) => handleRowContextMenu(event, index)}  // Context menu on right-click for row
-            >
-              {/* Render row number */}
-              <div
-                style={{
-                  border: '1px solid black',
-                  minWidth: 50,
-                  padding: 8,
-                }}
-              >
-                {index + 1}
-              </div>
-
-              {/* Render each cell in the row */}
-              {row.map((cell, cellIndex) => (
-                <div
-                  key={cellIndex}
-                  style={{
-                    border: '1px solid black',
-                    width: currentSheet.columns[cellIndex]?.width || '100px', // Use column width for row cell
-                    padding: 8,
-                    backgroundColor: highlightedColumnIndex === cellIndex ? '#f0f0f0' : 'transparent', // Highlight the column cells
-                  }}
-                  onClick={() => handleEditCell(index, cellIndex, setEditing, setEditedValue, currentSheet)}
-                >
-                  {editing && editing.rowIndex === index && editing.cellIndex === cellIndex ? (
-                    <TextField
-                      value={editedValue}
-                      onChange={(e) => setEditedValue(e.target.value)}
-                      onBlur={handleSaveEdit(editing, editedValue, currentSheet, setCurrentSheet, setEditing,setEditedValue, sheets, setSheets)}  // Save when the user clicks outside
-                      autoFocus
-                      fullWidth
-                    />
-                  ) : (
-                    cell || ' '
-                  )}
-                </div>
-              ))}
-            </div>
-          );
+    <List
+  height={listHeight}
+  itemCount={rowData.length}
+  itemSize={50}
+>
+  {({ index, style }) => {
+    const row = rowData[index];
+    return (
+      <div
+        key={index}
+        style={{
+          ...style,
+          display: 'flex',
+          backgroundColor: highlightedRowIndex === index ? '#f0f0f0' : 'transparent', // Highlight the row
         }}
-      </List>
+        onContextMenu={(event) => handleRowContextMenu(event, index)} // Handle row right-click
+      >
+        <div
+  style={{
+    border: '1px solid black',
+    minWidth: 50,
+    padding: 8,
+    cursor: 'context-menu',
+  }}
+  onClick={() => setHighlightedRowIndex(highlightedRowIndex === index ? null : index)}
+>
+          {index + 1}
+        </div>
+        {row.map((cell, cellIndex) => (
+          <div
+            key={cellIndex}
+          style={{
+  border: '1px solid black',
+  backgroundColor: editing && editing.rowIndex === index && editing.cellIndex === cellIndex ? '#f0f0f0' : 'transparent',
+  width: currentSheet.columns[cellIndex]?.width || '100px',
+  padding: 8,
+  overflow: 'hidden', 
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap', 
+}}
+
+            onClick={() => handleEditCell(index, cellIndex, setEditing, setEditedValue, currentSheet,highlightedColumnIndex, setHighlightedColumnIndex,highlightedRowIndex, setHighlightedRowIndex)}
+          >
+            {editing && editing.rowIndex === index && editing.cellIndex === cellIndex ? (
+              <input
+                type="text"
+                value={editedValue}
+                onChange={(e) => setEditedValue(e.target.value)}
+                onBlur={() =>
+                  handleSaveEdit(
+                    editing,
+                    editedValue,
+                    currentSheet,
+                    setCurrentSheet,
+                    setEditing,
+                    setEditedValue,
+                    sheets,
+                    setSheets
+                  )
+                }
+                autoFocus
+                style={{
+                  width: '100%',
+                  border: '1px solid #ccc',
+                  padding: '4px',
+                  fontSize: 'inherit',
+                }}
+              />
+            ) : (
+              cell || ' '
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }}
+</List>
+
 
       {/* Add Rows Section */}
       <div style={{ marginTop: 16 }}>
