@@ -6,12 +6,13 @@ import Select from './components/Select/Select';
 import { generateColumns, generateRows } from './components/Helper';
 import { Icon } from '@iconify/react';
 import Sheet from './components/Sheet/Sheet';  
+import HelpModal from './components/HelpModal/HelpModal'; 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [view, setView] = useState('select');
   const [sheets, setSheets] = useState([]);
   const [currentSheet, setCurrentSheet] = useState(null);
-
+  const [helpModal, setHelpModal] = useState(false);
   // Load SheetWonder from localStorage or create default if not found
   useEffect(() => {
     const savedData = JSON.parse(localStorage.getItem('SheetWonderdata'));
@@ -55,7 +56,7 @@ function App() {
       ) : (
         <div>
           <Icon icon="mingcute:back-line" width="24" height="24" onClick={() => setView('select')} />
-          
+             <Icon icon="ph:question-fill"onClick={() => setHelpModal(true)} style={{ marginLeft: 'auto',height: '4.4vh',width:'2vw',  }}/>
           {currentSheet && (
             <Sheet 
               currentSheet={currentSheet} 
@@ -70,6 +71,7 @@ function App() {
       {isModalOpen && (
         <Feedback isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
       )}
+      <HelpModal isOpen={helpModal}onClose={() => setHelpModal(false)}/>
     </div>
   );
 }

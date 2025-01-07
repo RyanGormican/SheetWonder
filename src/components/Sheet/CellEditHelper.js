@@ -1,10 +1,24 @@
-export const handleEditCell = (rowIndex, cellIndex, setEditing, setEditedValue, currentSheet,highlightedColumnIndex, setHighlightedColumnIndex,highlightedRowIndex, setHighlightedRowIndex) => {
+export const handleEditCell = (
+  rowIndex,
+  cellIndex,
+  setEditing,
+  setEditedValue,
+  currentSheet,
+  highlightedColumnIndex,
+  setHighlightedColumnIndex,
+  highlightedRowIndex,
+  setHighlightedRowIndex
+) => {
   const cellValue = currentSheet.rows[rowIndex]?.[cellIndex] || '';
+  
+  // Set the cell for editing
   setEditing({ rowIndex, cellIndex });
   setEditedValue(cellValue); 
+  
   setHighlightedColumnIndex(null);
   setHighlightedRowIndex(null);
 };
+
 
 
 export const handleSaveEdit = (editing, editedValue, currentSheet, setCurrentSheet, setEditing, setEditedValue, sheets, setSheets) => {

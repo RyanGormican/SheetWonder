@@ -15,51 +15,50 @@ const ResizableColumn = ({ colIndex, col, currentSheet, updateSheetData, sheets,
   };
 
   // Mouse move to update width while resizing
- const handleMouseMove = (event) => {
-  if (isResizing) {
-    // Calculate the difference between current and initial mouse position
-    const dx = event.clientX - startX;
+  const handleMouseMove = (event) => {
+    if (isResizing) {
+      // Calculate the difference between current and initial mouse position
+      const dx = event.clientX - startX;
 
-    // Increment or decrement width by dx, ensuring a minimum of 30px width
-    let newWidth = startWidth + dx;
+      // Increment or decrement width by dx, ensuring a minimum of 30px width
+      let newWidth = startWidth + dx;
 
-    // Enforce the minimum width of 30px
-    if (newWidth < 30) {
-      newWidth = 30;
+      // Enforce the minimum width of 30px
+      if (newWidth < 30) {
+        newWidth = 30;
+      }
+
+      // Ensure the new width doesn't result in an invalid value like null
+      newWidth = Math.max(newWidth, 30);  // To make sure width is always at least 30px
+
+      // Convert the width to a string with 'px'
+      const updatedColumns = [...currentSheet.columns];
+      updatedColumns[colIndex].width = `${newWidth}px`;  // Update column width as a string
+
+      // Directly update columns and save to localStorage
+      const updatedSheet = {
+        ...currentSheet,
+        columns: updatedColumns,  // Update columns only
+        lastUpdated: new Date().toISOString(),  // Update timestamp
+      };
+
+      // Update the state with the updated sheet (only columns)
+      setCurrentSheet(updatedSheet);
+
+      // Update the columns in the sheets state
+      const updatedSheets = sheets.map(sheet =>
+        sheet.id === currentSheet.id ? updatedSheet : sheet
+      );
+      setSheets(updatedSheets);
+
+      // Save to localStorage
+      const savedData = JSON.parse(localStorage.getItem('SheetWonderdata'));
+      savedData.sheets = savedData.sheets.map(sheet =>
+        sheet.id === currentSheet.id ? updatedSheet : sheet
+      );
+      localStorage.setItem('SheetWonderdata', JSON.stringify(savedData));  // Save the updated sheet
     }
-
-    // Ensure the new width doesn't result in an invalid value like null
-    newWidth = Math.max(newWidth, 30);  // To make sure width is always at least 30px
-
-    // Convert the width to a string with 'px'
-    const updatedColumns = [...currentSheet.columns];
-    updatedColumns[colIndex].width = `${newWidth}px`;  // Update column width as a string
-
-    // Directly update columns and save to localStorage
-    const updatedSheet = {
-      ...currentSheet,
-      columns: updatedColumns,  // Update columns only
-      lastUpdated: new Date().toISOString(),  // Update timestamp
-    };
-
-    // Update the state with the updated sheet (only columns)
-    setCurrentSheet(updatedSheet);
-
-    // Update the columns in the sheets state
-    const updatedSheets = sheets.map(sheet =>
-      sheet.id === currentSheet.id ? updatedSheet : sheet
-    );
-    setSheets(updatedSheets);
-
-    // Save to localStorage
-    const savedData = JSON.parse(localStorage.getItem('SheetWonderdata'));
-    savedData.sheets = savedData.sheets.map(sheet =>
-      sheet.id === currentSheet.id ? updatedSheet : sheet
-    );
-    localStorage.setItem('SheetWonderdata', JSON.stringify(savedData));  // Save the updated sheet
-  }
-};
-
+  };
 
   // Mouse up to stop resizing
   const handleMouseUp = () => {
