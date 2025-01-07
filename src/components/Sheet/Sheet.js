@@ -116,6 +116,56 @@ const Sheet = ({ currentSheet, setCurrentSheet, sheets, setSheets }) => {
       setHighlightedColumnIndex(null); 
     }
   };
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    // Check if the pressed key is an arrow key
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (editing) { // Only handle key presses if editing
+
+        // Save the edited value to the current cell before moving
+        if (editedValue !== rowData[editing.rowIndex][editing.cellIndex]) {
+          const updatedRows = [...currentSheet.rows];
+          updatedRows[editing.rowIndex][editing.cellIndex] = editedValue;
+          updateSheetData(updatedRows); // Save the data to the sheet
+        }
+
+        let newRowIndex = editing.rowIndex;
+        let newColIndex = editing.cellIndex;
+        
+        // Handle arrow key movement
+        if (e.key === 'ArrowUp') {
+          newRowIndex = Math.max(editing.rowIndex - 1, 0); // Prevent going above the first row
+        } else if (e.key === 'ArrowDown') {
+          newRowIndex = Math.min(editing.rowIndex + 1, rowData.length - 1); // Prevent going below the last row
+        } else if (e.key === 'ArrowLeft') {
+          newColIndex = Math.max(editing.cellIndex - 1, 0); // Prevent going left of the first column
+        } else if (e.key === 'ArrowRight') {
+          newColIndex = Math.min(editing.cellIndex + 1, currentSheet.columns.length - 1); // Prevent going right of the last column
+        }
+
+        // Update the edited value for the new cell
+        const newCellValue = rowData[newRowIndex][newColIndex] || '';
+        setEditedValue(newCellValue);
+
+        // Update the editing state to reflect the new cell
+        setEditing({
+          rowIndex: newRowIndex,
+          cellIndex: newColIndex,
+        });
+      }
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [editing, editedValue, rowData, currentSheet.rows, currentSheet.columns.length]);
+
+
+
+
 
   return (
     <div>
